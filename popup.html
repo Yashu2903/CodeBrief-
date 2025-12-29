@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeBrief Extension</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>CodeBrief Extension</h1>
+    </header>
+    
+    <main>
+      <div class="input-section">
+        <label for="repoUrl" class="input-label">GitHub Repository URL</label>
+        <input 
+          type="text" 
+          id="repoUrl" 
+          class="repo-input" 
+          placeholder="https://github.com/owner/repo"
+        />
+        <small class="input-hint">Enter full GitHub repository URL</small>
+      </div>
+      
+      <div class="token-section">
+        <label for="githubToken" class="input-label">GitHub Token (Optional)</label>
+        <input 
+          type="password" 
+          id="githubToken" 
+          class="repo-input" 
+          placeholder="ghp_xxxxxxxxxxxx"
+        />
+        <small class="input-hint">Increases API rate limit (recommended)</small>
+      </div>
+      
+      <div class="actions">
+        <button id="fetchButton" class="btn btn-primary">Fetch Repository Files</button>
+      </div>
+      
+      <div id="statusSection" class="info-section hidden">
+        <p id="statusText">Ready to fetch repository</p>
+        <div id="progressBar" class="progress-bar hidden">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+      </div>
+      
+      <div id="resultsSection" class="results-section hidden">
+        <h3>Fetched Files</h3>
+        <div id="fileList" class="file-list"></div>
+      </div>
+    </main>
+  </div>
+  
+  <script src="github-api.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
+
