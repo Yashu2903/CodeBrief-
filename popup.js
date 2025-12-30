@@ -11,10 +11,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsSection = document.getElementById('resultsSection');
   const fileList = document.getElementById('fileList');
 
-  // Load saved token if exists
-  chrome.storage.local.get(['githubToken'], (result) => {
+  // Load saved token and detected repository if exists
+  chrome.storage.local.get(['githubToken', 'detectedRepository'], (result) => {
     if (result.githubToken) {
       githubTokenInput.value = result.githubToken;
+    }
+    
+    // Pre-fill repository URL if detected from current page
+    if (result.detectedRepository && result.detectedRepository.url) {
+      repoUrlInput.value = result.detectedRepository.url;
+      showStatus(`Detected repository: ${result.detectedRepository.owner}/${result.detectedRepository.repo}`, 'info');
+    }
+    
+    // Clear detected repository after using it
+    if (result.detectedRepository) {
+      chrome.storage.local.remove(['detectedRepository']);
+    }
+  });
+
+  // Try to get repository from current tab if on GitHub
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0] && tabs[0].url && tabs[0].url.includes('github.com')) {
+      chrome.tabs.sendMessage(tabs[0].id, { action: 'getCurrentRepository' }, (response) => {
+        if (chrome.runtime.lastError) {
+          // Content script might not be ready
+          return;
+        }
+        if (response && response.success && response.repository) {
+          repoUrlInput.value = response.repository.url;
+          showStatus(`Auto-filled from current page: ${response.repository.owner}/${response.repository.repo}`, 'info');
+        }
+      });
     }
   });
 

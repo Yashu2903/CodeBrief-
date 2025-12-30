@@ -88,6 +88,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true;
   }
+
+  // Handle repository detection from content script
+  if (request.action === 'repositoryDetected') {
+    console.log('Repository detected on page:', request.repository);
+    // Store the detected repository info for quick access
+    chrome.storage.local.set({ 
+      detectedRepository: request.repository 
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  // Handle request to open popup with repository URL pre-filled
+  if (request.action === 'openPopupWithRepo') {
+    // Store repository info so popup can use it
+    if (request.repoInfo) {
+      chrome.storage.local.set({ 
+        detectedRepository: request.repoInfo 
+      });
+    }
+    sendResponse({ success: true });
+    return true;
+  }
 });
 
 // Handle extension icon click (if no popup is set)
