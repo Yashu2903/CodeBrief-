@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "CodeBrief Extension",
   "version": "1.0.0",
-  "description": "A Chrome extension built with CodeBrief",
+  "description": "Analyze GitHub repositories and generate ATS-friendly resume points from code",
   "permissions": [
     "storage",
     "activeTab"
