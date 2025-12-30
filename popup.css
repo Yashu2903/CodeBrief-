@@ -254,3 +254,163 @@ main {
   background-color: #d4e8f0 !important;
 }
 
+/* LLM Section */
+.llm-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #e0e0e0;
+}
+
+.llm-header {
+  margin-bottom: 16px;
+}
+
+.llm-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.llm-config {
+  margin-bottom: 16px;
+}
+
+.llm-config .input-section {
+  margin-bottom: 12px;
+}
+
+.llm-config select {
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background-color: #764ba2;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #5d3a7f;
+  transform: translateY(-1px);
+}
+
+.btn-secondary:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 12px;
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-small:hover {
+  background-color: #5568d3;
+}
+
+/* Resume Points Section */
+.resume-points-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.resume-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.resume-header h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.resume-points {
+  background-color: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.resume-point {
+  margin-bottom: 12px;
+  padding-left: 20px;
+  position: relative;
+  color: #333;
+}
+
+.resume-point:before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #667eea;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.resume-point:last-child {
+  margin-bottom: 0;
+}
+
+.resume-stats {
+  margin-top: 12px;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #666;
+}
+
+.stats-item {
+  margin-bottom: 4px;
+}
+
+.stats-item:last-child {
+  margin-bottom: 0;
+}
+
+.stats-item.warning {
+  color: #d32f2f;
+  font-weight: 500;
+}
+
+/* Scrollbar for resume points */
+.resume-points::-webkit-scrollbar {
+  width: 6px;
+}
+
+.resume-points::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.resume-points::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.resume-points::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+.optional-badge {
+  font-size: 10px;
+  font-weight: normal;
+  margin-left: 4px;
+}
+

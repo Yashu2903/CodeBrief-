@@ -10,11 +10,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressFill = document.getElementById('progressFill');
   const resultsSection = document.getElementById('resultsSection');
   const fileList = document.getElementById('fileList');
+  
+  // LLM elements
+  const llmSection = document.getElementById('llmSection');
+  const llmApiKeyInput = document.getElementById('llmApiKey');
+  const generateButton = document.getElementById('generateButton');
+  const llmStatusSection = document.getElementById('llmStatusSection');
+  const llmStatusText = document.getElementById('llmStatusText');
+  const resumePointsSection = document.getElementById('resumePointsSection');
+  const resumePoints = document.getElementById('resumePoints');
+  const resumeStats = document.getElementById('resumeStats');
+  const copyButton = document.getElementById('copyButton');
 
-  // Load saved token and detected repository if exists
-  chrome.storage.local.get(['githubToken', 'detectedRepository'], (result) => {
+  // Load saved tokens and detected repository if exists
+  chrome.storage.local.get(['githubToken', 'llmApiKey', 'detectedRepository', 'repositoryFiles'], (result) => {
     if (result.githubToken) {
       githubTokenInput.value = result.githubToken;
+    }
+    
+    if (result.llmApiKey) {
+      llmApiKeyInput.value = result.llmApiKey;
     }
     
     // Pre-fill repository URL if detected from current page
@@ -26,6 +41,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Clear detected repository after using it
     if (result.detectedRepository) {
       chrome.storage.local.remove(['detectedRepository']);
+    }
+    
+    // If repository files exist, show LLM section
+    if (result.repositoryFiles && result.repositoryFiles.length > 0) {
+      llmSection.classList.remove('hidden');
+      // Button is always enabled (Hugging Face is free)
+      generateButton.disabled = false;
     }
   });
 
@@ -45,12 +67,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Save token when changed
+  // Save tokens when changed
   githubTokenInput.addEventListener('blur', () => {
     if (githubTokenInput.value) {
       chrome.storage.local.set({ githubToken: githubTokenInput.value });
     }
   });
+  
+  llmApiKeyInput.addEventListener('blur', () => {
+    if (llmApiKeyInput.value) {
+      chrome.storage.local.set({ llmApiKey: llmApiKeyInput.value });
+    }
+  });
+  
+  // Generate button is always enabled (Hugging Face is free)
+  generateButton.disabled = false;
 
   // Handle fetch button click
   fetchButton.addEventListener('click', async () => {
@@ -111,6 +142,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }, () => {
         console.log('Repository files stored:', result.totalFiles);
+        // Show LLM section after files are fetched
+        llmSection.classList.remove('hidden');
+        // Button is always enabled (Hugging Face is free)
+        generateButton.disabled = false;
       });
 
     } catch (error) {
@@ -155,5 +190,143 @@ document.addEventListener('DOMContentLoaded', () => {
       Total: ${result.files.length} files (${(totalSize / 1024).toFixed(1)} KB)
     </div>` + fileList.innerHTML;
   }
+  
+  // Handle generate resume points button
+  generateButton.addEventListener('click', async () => {
+    const apiKey = llmApiKeyInput.value.trim();
+    
+    // Validate API key is provided
+    if (!apiKey) {
+      showLLMStatus('Please enter your Hugging Face API key. Get a free key at https://huggingface.co/settings/tokens', 'error');
+      return;
+    }
+    
+    // Validate API key format (should start with hf_)
+    if (!apiKey.startsWith('hf_')) {
+      showLLMStatus('Invalid API key format. Hugging Face API keys should start with "hf_". Get a key at https://huggingface.co/settings/tokens', 'error');
+      return;
+    }
+    
+    // Get repository files and info
+    chrome.storage.local.get(['repositoryFiles', 'repositoryInfo'], async (result) => {
+      if (!result.repositoryFiles || result.repositoryFiles.length === 0) {
+        showLLMStatus('No repository files found. Please fetch files first.', 'error');
+        return;
+      }
+      
+      if (!result.repositoryInfo) {
+        showLLMStatus('Repository information not found.', 'error');
+        return;
+      }
+      
+      // Disable button and show loading
+      generateButton.disabled = true;
+      generateButton.textContent = 'Generating...';
+      llmStatusSection.classList.remove('hidden');
+      resumePointsSection.classList.add('hidden');
+      
+      try {
+        const llmResult = await LLMAPI.generateResumePoints(
+          'huggingface', // Always use Hugging Face
+          apiKey,
+          result.repositoryInfo,
+          result.repositoryFiles,
+          (progress) => {
+            if (progress.type === 'preparing') {
+              showLLMStatus(progress.message, 'info');
+            } else if (progress.type === 'prepared') {
+              showLLMStatus(`${progress.message} (${progress.stats.processedFiles}/${progress.stats.totalFiles} files)`, 'info');
+            } else if (progress.type === 'formatting') {
+              showLLMStatus(progress.message, 'info');
+            } else if (progress.type === 'calling') {
+              showLLMStatus(progress.message, 'info');
+            } else if (progress.type === 'complete') {
+              showLLMStatus(progress.message, 'success');
+            } else if (progress.type === 'error') {
+              showLLMStatus(`Error: ${progress.message}`, 'error');
+            }
+          },
+          {
+            model: 'Qwen/Qwen2.5-7B-Instruct',
+            temperature: 0.7,
+            maxContextTokens: 100000,      // Input/context tokens (for file preparation)
+            maxGenerationTokens: 2000      // Output/generation tokens (for response)
+          }
+        );
+        
+        // Display resume points
+        displayResumePoints(llmResult.resumePoints, llmResult.stats);
+        
+      } catch (error) {
+        console.error('Error generating resume points:', error);
+        // Extract error message safely, handling different error formats
+        const errorMessage = error?.message || 
+                            error?.error || 
+                            (typeof error === 'string' ? error : String(error)) ||
+                            'Unknown error occurred';
+        showLLMStatus(`Error: ${errorMessage}`, 'error');
+      } finally {
+        generateButton.disabled = false;
+        generateButton.textContent = 'Generate Resume Points';
+      }
+    });
+  });
+  
+  function showLLMStatus(message, type = 'info') {
+    llmStatusText.textContent = message;
+    llmStatusSection.classList.remove('hidden');
+    llmStatusText.className = `status-${type}`;
+  }
+  
+  function displayResumePoints(points, stats) {
+    resumePointsSection.classList.remove('hidden');
+    
+    // Format and display resume points
+    const formattedPoints = points
+      .split('\n')
+      .filter(line => line.trim())
+      .map(line => {
+        // Clean up bullet points
+        line = line.replace(/^[-•*]\s*/, '').trim();
+        if (!line) return null;
+        return `<div class="resume-point">${line}</div>`;
+      })
+      .filter(Boolean)
+      .join('');
+    
+    resumePoints.innerHTML = formattedPoints || '<div class="resume-point">No resume points generated.</div>';
+    
+    // Display stats
+    const statsHtml = `
+      <div class="stats-item">
+        <strong>Files Analyzed:</strong> ${stats.processedFiles} of ${stats.totalFiles}
+      </div>
+      <div class="stats-item">
+        <strong>Model:</strong> ${stats.model}
+      </div>
+      ${stats.truncated ? '<div class="stats-item warning">⚠️ Some files were truncated due to size limits</div>' : ''}
+    `;
+    resumeStats.innerHTML = statsHtml;
+    
+    // Scroll to resume points
+    resumePointsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  
+  // Handle copy button
+  copyButton.addEventListener('click', () => {
+    const text = resumePoints.innerText || resumePoints.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = copyButton.textContent;
+      copyButton.textContent = 'Copied!';
+      copyButton.style.backgroundColor = '#4CAF50';
+      setTimeout(() => {
+        copyButton.textContent = originalText;
+        copyButton.style.backgroundColor = '';
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+      showLLMStatus('Failed to copy to clipboard', 'error');
+    });
+  });
 });
 

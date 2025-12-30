@@ -138,7 +138,8 @@ function updateBadge(enabled) {
   }
 }
 
-// Handle LLM processing (placeholder for future implementation)
+// Handle LLM processing (now implemented in popup.js via llm-api.js)
+// This function is kept for backward compatibility but processing happens in popup
 async function handleLLMProcessing(request) {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(['repositoryFiles', 'repositoryInfo'], async (result) => {
@@ -148,18 +149,12 @@ async function handleLLMProcessing(request) {
       }
 
       try {
-        // TODO: Implement LLM API integration here
-        // This is a placeholder for future LLM processing
-        const files = result.repositoryFiles;
-        const totalFiles = files.length;
-        const totalSize = files.reduce((sum, file) => sum + (file.size || 0), 0);
-
-        // Placeholder response
+        // LLM processing is now handled directly in popup.js
+        // This is kept for potential background processing in the future
         resolve({
-          message: 'LLM processing not yet implemented',
+          message: 'LLM processing should be done via popup interface',
           stats: {
-            totalFiles,
-            totalSize,
+            totalFiles: result.repositoryFiles.length,
             repository: result.repositoryInfo
           }
         });

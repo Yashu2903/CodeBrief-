@@ -1,7 +1,7 @@
 
 # CodeBrief Chrome Extension
 
-A Chrome extension that analyzes GitHub repositories by fetching and parsing source files, then generates ATS-friendly resume bullet points based on project structure, technologies, and code analysis.
+A Chrome extension that analyzes GitHub repositories by fetching and parsing source files, then generates ATS-friendly resume bullet points using free AI models from Hugging Face.
 
 ## Features
 
@@ -13,6 +13,7 @@ A Chrome extension that analyzes GitHub repositories by fetching and parsing sou
 - **Content Script Integration**: Auto-detects GitHub repositories on active tabs
 - **Storage API**: Saves repository data and preferences
 - **Progress Tracking**: Real-time progress updates during file fetching
+- **AI-Powered Resume Generation**: Uses free Hugging Face AI to generate ATS-friendly resume points
 
 ## Installation
 
@@ -55,15 +56,18 @@ All icons are properly configured in `manifest.json`.
    - Or navigate to a GitHub repository page - the URL will auto-fill
 3. Optionally add a GitHub Personal Access Token for higher rate limits
 4. Click "Fetch Repository Files" to start analyzing
-5. View the list of fetched files and wait for processing to complete
-6. Repository files are stored and ready for LLM processing (coming soon)
+5. View the list of fetched files
+6. (Optional) Enter Hugging Face API key for higher rate limits (free tier works without key)
+7. Click "Generate Resume Points" to create ATS-friendly resume bullet points
+8. Copy the generated resume points to your clipboard
 
 ## Permissions
 
-- `storage`: Used to save repository files, preferences, and GitHub tokens
+- `storage`: Used to save repository files, preferences, and API tokens
 - `activeTab`: Used to interact with the current tab and detect GitHub repositories
 - `https://api.github.com/*`: Required for fetching repository files via GitHub API
 - `https://github.com/*`: Required for detecting repositories on GitHub pages
+- `https://router.huggingface.co/*`: Required for AI-powered resume point generation (FREE)
 
 ## Manifest Version
 

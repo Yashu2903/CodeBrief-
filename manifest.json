@@ -9,7 +9,8 @@
   ],
   "host_permissions": [
     "https://api.github.com/*",
-    "https://github.com/*"
+    "https://github.com/*",
+    "https://router.huggingface.co/*"
   ],
   "action": {
     "default_popup": "popup.html",

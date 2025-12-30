@@ -51,10 +51,47 @@
         <h3>Fetched Files</h3>
         <div id="fileList" class="file-list"></div>
       </div>
+      
+      <div id="llmSection" class="llm-section hidden">
+        <div class="llm-header">
+          <h3>Generate Resume Points</h3>
+        </div>
+        
+        <div class="llm-config">
+          <div class="input-section">
+            <label for="llmApiKey" class="input-label">Hugging Face API Key <span class="optional-badge" style="color: #FF6B6B;">(Required)</span></label>
+            <input 
+              type="password" 
+              id="llmApiKey" 
+              class="repo-input" 
+              placeholder="hf_xxxxxxxxxxxx"
+            />
+            <small class="input-hint">Get a free API key at <a href="https://huggingface.co/settings/tokens" target="_blank" style="color: #4CAF50;">huggingface.co/settings/tokens</a> (starts with "hf_")</small>
+          </div>
+        </div>
+        
+        <div class="actions">
+          <button id="generateButton" class="btn btn-secondary" disabled>Generate Resume Points</button>
+        </div>
+        
+        <div id="llmStatusSection" class="info-section hidden">
+          <p id="llmStatusText">Ready to generate</p>
+        </div>
+        
+        <div id="resumePointsSection" class="resume-points-section hidden">
+          <div class="resume-header">
+            <h4>ATS-Friendly Resume Points</h4>
+            <button id="copyButton" class="btn btn-small">Copy</button>
+          </div>
+          <div id="resumePoints" class="resume-points"></div>
+          <div id="resumeStats" class="resume-stats"></div>
+        </div>
+      </div>
     </main>
   </div>
   
   <script src="github-api.js"></script>
+  <script src="llm-api.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
