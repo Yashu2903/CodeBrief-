@@ -193,19 +193,8 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Handle generate resume points button
   generateButton.addEventListener('click', async () => {
-    const apiKey = llmApiKeyInput.value.trim();
-    
-    // Validate API key is provided
-    if (!apiKey) {
-      showLLMStatus('Please enter your Hugging Face API key. Get a free key at https://huggingface.co/settings/tokens', 'error');
-      return;
-    }
-    
-    // Validate API key format (should start with hf_)
-    if (!apiKey.startsWith('hf_')) {
-      showLLMStatus('Invalid API key format. Hugging Face API keys should start with "hf_". Get a key at https://huggingface.co/settings/tokens', 'error');
-      return;
-    }
+    // API key is no longer required - backend handles authentication
+    // But we keep the input for backward compatibility (optional)
     
     // Get repository files and info
     chrome.storage.local.get(['repositoryFiles', 'repositoryInfo'], async (result) => {
@@ -227,8 +216,8 @@ document.addEventListener('DOMContentLoaded', () => {
       
       try {
         const llmResult = await LLMAPI.generateResumePoints(
-          'huggingface', // Always use Hugging Face
-          apiKey,
+          'huggingface', // Provider name (kept for compatibility)
+          null, // API key no longer needed - backend handles authentication
           result.repositoryInfo,
           result.repositoryFiles,
           (progress) => {

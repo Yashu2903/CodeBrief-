@@ -130,133 +130,84 @@ Generate the resume bullet points now. Remember: EVERY bullet point MUST include
 }
 
 /**
- * Call Hugging Face Inference API to generate resume points (FREE)
- * @param {string} apiKey - Hugging Face API key 
+ * Call backend proxy to generate resume points
+ * @param {string} apiKey - No longer used, kept for compatibility
  * @param {string} prompt - The prompt to send
- * @param {Object} options - Additional options (model, temperature, maxGenerationTokens, etc.)
+ * @param {Object} options - Additional options (repoInfo, etc.)
  * @returns {Promise<Object>} Object with content and token usage { content: string, usage: { prompt_tokens, completion_tokens, total_tokens } }
  */
 async function callHuggingFace(apiKey, prompt, options = {}) {
-  const {
-    model = 'Qwen/Qwen2.5-7B-Instruct',
-    temperature = 0.7,
-    maxGenerationTokens = 2000  // Generation/output tokens (separate from context tokens)
-  } = options;
+  // Backend URL - configure this to match your deployment
+  // For development: use http://localhost:8000
+  // For production: update this to your deployed backend URL
+  const BACKEND_URL = 'http://localhost:8000';
   
-
-  const url = 'https://router.huggingface.co/v1/chat/completions';
-  
-  const headers = {
-    'Content-Type': 'application/json'
-  };
-  
-  if (apiKey) {
-    headers['Authorization'] = `Bearer ${apiKey}`;
-  }
+  // Extract repoInfo from options
+  const repoInfo = options.repoInfo || { owner: '', repo: '', url: '' };
   
   try {
-    const response = await fetch(url, {
+    const response = await fetch(`${BACKEND_URL}/generate-resume`, {
       method: 'POST',
-      headers: headers,
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
-        model: model, 
-        messages: [
-            {
-                role: 'system',
-                content: 'You are an expert technical recruiter and software engineer who writes concise ATS-optimized resume bullets. You ALWAYS include quantifiable numbers and metrics in every bullet point to demonstrate measurable impact and achievements.'
-              },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: maxGenerationTokens,  // Generation tokens (output)
-        temperature: temperature
+        repoInfo: repoInfo,
+        formattedPrompt: prompt
       })
     });
     
     if (!response.ok) {
-      let errorMessage = '';
+      let errorMessage = 'Unknown error';
       try {
         const errorData = await response.json();
-        // Handle different error response formats
-        errorMessage = errorData.error?.message || 
-                      errorData.error || 
-                      errorData.message || 
-                      errorData.detail ||
-                      (typeof errorData === 'string' ? errorData : '');
+        errorMessage = errorData.message || errorData.detail || errorData.error || errorMessage;
       } catch (e) {
-        // If JSON parsing fails, use status text
         errorMessage = response.statusText;
       }
       
-      // Handle specific status codes with helpful messages
-      if (response.status === 401) {
-        throw new Error('Authentication required. Please add your Hugging Face API key. Get a free key at https://huggingface.co/settings/tokens (the key should start with "hf_")');
+      // Handle specific status codes
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please wait a moment and try again.');
       }
       if (response.status === 503) {
-        throw new Error('Model is loading. Please wait 10-20 seconds and try again. This is normal for free Hugging Face models.');
+        throw new Error('Service temporarily unavailable. The model may be loading. Please try again in 10-20 seconds.');
       }
-      if (response.status === 404) {
-        throw new Error(`Model not found: ${model}. ${errorMessage ? `Details: ${errorMessage}` : 'Please check the model name is correct.'}`);
+      if (response.status === 504) {
+        throw new Error('Request timed out. Please try again.');
       }
-      if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please wait a moment and try again, or add your Hugging Face API key for higher limits.');
+      if (response.status === 502) {
+        throw new Error('Backend service error. Please try again later.');
       }
       
-      // Generic error with extracted message
-      const finalMessage = errorMessage 
-        ? `Hugging Face API error (${response.status}): ${errorMessage}`
-        : `Hugging Face API error: ${response.status} ${response.statusText}`;
-      throw new Error(finalMessage);
+      throw new Error(`Backend error (${response.status}): ${errorMessage}`);
     }
     
-
     const data = await response.json();
     
-    // Log response for debugging (remove in production if needed)
-    console.log('Hugging Face API response:', data);
-    
-    if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-      const content = data.choices[0].message.content.trim();
-      
-      // Extract token usage from response (if available)
-      const usage = data.usage || {};
-      const tokenUsage = {
-        prompt_tokens: usage.prompt_tokens || null,      // Context/input tokens
-        completion_tokens: usage.completion_tokens || null,  // Generation/output tokens
-        total_tokens: usage.total_tokens || null
-      };
-      
-      return {
-        content: content,
-        usage: tokenUsage
-      };
-    }
-    
-    // Provide more detailed error if response format is unexpected
-    const responseStr = JSON.stringify(data).substring(0, 200);
-    throw new Error(`Unexpected response format from Hugging Face API. Response: ${responseStr}`);
+    // Return in the same format as before for compatibility
+    return {
+      content: data.resumePoints || '',
+      usage: {
+        prompt_tokens: null,
+        completion_tokens: null,
+        total_tokens: null
+      }
+    };
   } catch (error) {
-    console.error('Hugging Face API error:', error);
-    // Ensure error is always an Error object with a proper message
+    console.error('Backend API error:', error);
     if (error instanceof Error) {
       throw error;
-    } else if (typeof error === 'object' && error !== null) {
-      // If error is an object, try to extract a meaningful message
-      const message = error.message || error.error || error.detail || JSON.stringify(error);
-      throw new Error(`Hugging Face API error: ${message}`);
-    } else {
-      throw new Error(`Hugging Face API error: ${String(error)}`);
     }
+    throw new Error(`Backend API error: ${String(error)}`);
   }
 }
 
 /**
  * Main function to generate resume points from repository files
- * Uses Hugging Face (free) API
+ * Uses backend proxy to call Hugging Face API (backend handles authentication)
  * @param {string} provider - LLM provider (always 'huggingface')
- * @param {string} apiKey - Hugging Face API key (optional)
+ * @param {string} apiKey - No longer used, kept for compatibility
  * @param {Object} repoInfo - Repository information
  * @param {Array} files - Array of repository files
  * @param {Function} onProgress - Optional progress callback
@@ -291,14 +242,14 @@ async function generateResumePoints(provider, apiKey, repoInfo, files, onProgres
     const prompt = createResumePrompt(repoInfo, formattedFiles);
     
     if (onProgress) {
-      onProgress({ type: 'calling', message: 'Calling Hugging Face API...' });
+      onProgress({ type: 'calling', message: 'Calling backend API...' });
     }
     
-    // Call Hugging Face API (free)
-    // API key is required for authentication
+    // Call backend proxy (API key no longer needed - backend handles authentication)
     // Separate context tokens (input) from generation tokens (output)
     const apiOptions = {
       ...options,
+      repoInfo: repoInfo,  // Pass repoInfo to the backend
       maxGenerationTokens: options.maxGenerationTokens || options.maxTokens || 2000
     };
     const apiResult = await callHuggingFace(apiKey, prompt, apiOptions);

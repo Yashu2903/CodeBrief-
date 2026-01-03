@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # Initialize FastAPI app
 app = FastAPI(
     title="Hugging Face Proxy API",
-    description="Secure proxy for Hugging Face Inference API",
+    description="Secure proxy for Hugging Face Router API (Chat Completions)",
     version="1.0.0"
 )
 
@@ -53,7 +53,8 @@ app.add_middleware(
 
 # Configuration
 HF_API_KEY = os.getenv("HF_API_KEY")
-HF_API_URL = "https://router.huggingface.co/hf-inference/models/mistralai/Mistral-7B-Instruct-v0.2"
+HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
+HF_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 MAX_INPUT_SIZE = 500000  # Maximum input size in characters (~500KB)
 MAX_RESPONSE_SIZE = 100000  # Maximum response size in characters (~100KB)
 REQUEST_TIMEOUT = 120  # Timeout for HF API requests in seconds
@@ -149,11 +150,11 @@ async def generate_resume(request: Request, body: GenerateResumeRequest):
         # Note: We do NOT log the prompt or any sensitive data
         logger.info(f"Processing request for {body.repoInfo.owner}/{body.repoInfo.repo}")
         
-        # Call Hugging Face Inference API
+        # Call Hugging Face Router API
         async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
             try:
-                # Use the 2025 Hugging Face Inference Router endpoint
-                # The endpoint expects plain text input
+                # Use the Hugging Face Router API with chat completions format
+                # The endpoint expects OpenAI-compatible chat format
                 response = await client.post(
                     HF_API_URL,
                     headers={
@@ -161,12 +162,19 @@ async def generate_resume(request: Request, body: GenerateResumeRequest):
                         "Content-Type": "application/json"
                     },
                     json={
-                        "inputs": body.formattedPrompt,
-                        "parameters": {
-                            "max_new_tokens": 2000,
-                            "temperature": 0.7,
-                            "return_full_text": False
-                        }
+                        "model": HF_MODEL,
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": "You are an expert technical recruiter and software engineer who writes concise ATS-optimized resume bullets. You ALWAYS include quantifiable numbers and metrics in every bullet point to demonstrate measurable impact and achievements."
+                            },
+                            {
+                                "role": "user",
+                                "content": body.formattedPrompt
+                            }
+                        ],
+                        "max_tokens": 2000,
+                        "temperature": 0.7
                     }
                 )
                 
@@ -200,22 +208,24 @@ async def generate_resume(request: Request, body: GenerateResumeRequest):
                     )
                 
                 # Parse response
-                # Hugging Face Inference API returns different formats depending on the endpoint
-                # For the router endpoint, response is typically a list with generated text
+                # Hugging Face Router API returns OpenAI-compatible chat completions format
                 response_data = response.json()
                 
-                # Extract text from response (handle different response formats)
+                # Extract text from chat completions format: {"choices": [{"message": {"content": "..."}}]}
                 resume_points = ""
-                if isinstance(response_data, list) and len(response_data) > 0:
-                    # Standard inference API format: [{"generated_text": "..."}]
-                    if isinstance(response_data[0], dict):
-                        resume_points = response_data[0].get("generated_text", "")
-                elif isinstance(response_data, dict):
-                    # Alternative format: {"generated_text": "..."} or {"text": "..."}
-                    resume_points = response_data.get("generated_text") or response_data.get("text", "")
-                else:
-                    # Fallback: try to extract as string
-                    resume_points = str(response_data)
+                if isinstance(response_data, dict):
+                    choices = response_data.get("choices", [])
+                    if choices and len(choices) > 0:
+                        message = choices[0].get("message", {})
+                        resume_points = message.get("content", "")
+                
+                if not resume_points:
+                    # Fallback: log and raise error if response format is unexpected
+                    logger.error(f"Unexpected response format from Hugging Face API: {response_data}")
+                    raise HTTPException(
+                        status_code=status.HTTP_502_BAD_GATEWAY,
+                        detail="Unexpected response format from external API."
+                    )
                 
                 # Validate response size
                 if len(resume_points) > MAX_RESPONSE_SIZE:

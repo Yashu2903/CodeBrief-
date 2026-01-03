@@ -1,6 +1,6 @@
 # Secure Hugging Face Proxy Backend
 
-A minimal, secure FastAPI backend proxy that allows Chrome extensions to call the Hugging Face Inference API without exposing the API token to users.
+A minimal, secure FastAPI backend proxy that allows Chrome extensions to call the Hugging Face Router API (Chat Completions) without exposing the API token to users.
 
 ## Why This Backend Exists
 
