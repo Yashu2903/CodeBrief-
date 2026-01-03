@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // LLM elements
   const llmSection = document.getElementById('llmSection');
-  const llmApiKeyInput = document.getElementById('llmApiKey');
   const generateButton = document.getElementById('generateButton');
   const llmStatusSection = document.getElementById('llmStatusSection');
   const llmStatusText = document.getElementById('llmStatusText');
@@ -23,13 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyButton = document.getElementById('copyButton');
 
   // Load saved tokens and detected repository if exists
-  chrome.storage.local.get(['githubToken', 'llmApiKey', 'detectedRepository', 'repositoryFiles'], (result) => {
+  chrome.storage.local.get(['githubToken', 'detectedRepository', 'repositoryFiles'], (result) => {
     if (result.githubToken) {
       githubTokenInput.value = result.githubToken;
-    }
-    
-    if (result.llmApiKey) {
-      llmApiKeyInput.value = result.llmApiKey;
     }
     
     // Pre-fill repository URL if detected from current page
@@ -71,12 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
   githubTokenInput.addEventListener('blur', () => {
     if (githubTokenInput.value) {
       chrome.storage.local.set({ githubToken: githubTokenInput.value });
-    }
-  });
-  
-  llmApiKeyInput.addEventListener('blur', () => {
-    if (llmApiKeyInput.value) {
-      chrome.storage.local.set({ llmApiKey: llmApiKeyInput.value });
     }
   });
   

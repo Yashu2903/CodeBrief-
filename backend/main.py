@@ -1,5 +1,3 @@
-
-
 import os
 import logging
 from typing import Optional
@@ -178,7 +176,6 @@ async def generate_resume(request: Request, body: GenerateResumeRequest):
                     }
                 )
                 
-                # Handle different HTTP status codes
                 if response.status_code == 401:
                     logger.error("Hugging Face API authentication failed - invalid token")
                     raise HTTPException(
@@ -232,7 +229,6 @@ async def generate_resume(request: Request, body: GenerateResumeRequest):
                     logger.warning("Response size exceeds maximum, truncating")
                     resume_points = resume_points[:MAX_RESPONSE_SIZE] + "\n... [truncated]"
                 
-                # Treat model output as plain text only - no execution or eval
                 # Return the response without any processing that could execute code
                 return GenerateResumeResponse(resumePoints=resume_points)
                 
