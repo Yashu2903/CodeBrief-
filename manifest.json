@@ -10,7 +10,7 @@
   "host_permissions": [
     "https://api.github.com/*",
     "https://github.com/*",
-    "http://localhost:8000/*"
+    "https://codebrief-backend.onrender.com/*"
   ],
   "action": {
     "default_popup": "popup.html",

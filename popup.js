@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // LLM elements
   const llmSection = document.getElementById('llmSection');
   const generateButton = document.getElementById('generateButton');
+  const jobDescriptionInput = document.getElementById('jobDescription');
   const llmStatusSection = document.getElementById('llmStatusSection');
   const llmStatusText = document.getElementById('llmStatusText');
   const resumePointsSection = document.getElementById('resumePointsSection');
@@ -204,6 +205,9 @@ document.addEventListener('DOMContentLoaded', () => {
       resumePointsSection.classList.add('hidden');
       
       try {
+        // Get job description if provided
+        const jobDescription = jobDescriptionInput.value.trim() || null;
+        
         const llmResult = await LLMAPI.generateResumePoints(
           'huggingface', // Provider name (kept for compatibility)
           null, // API key no longer needed - backend handles authentication
@@ -228,7 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
             model: 'Qwen/Qwen2.5-7B-Instruct',
             temperature: 0.7,
             maxContextTokens: 100000,      // Input/context tokens (for file preparation)
-            maxGenerationTokens: 2000      // Output/generation tokens (for response)
+            maxGenerationTokens: 2000,     // Output/generation tokens (for response)
+            jobDescription: jobDescription // Optional job description for customization
           }
         );
         

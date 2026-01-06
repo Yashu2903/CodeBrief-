@@ -83,6 +83,7 @@ class GenerateResumeRequest(BaseModel):
     """Request model for resume generation"""
     repoInfo: RepoInfo
     formattedPrompt: str = Field(..., min_length=1)
+    jobDescription: Optional[str] = Field(None, max_length=10000)
 
     @field_validator('formattedPrompt')
     @classmethod
@@ -90,6 +91,14 @@ class GenerateResumeRequest(BaseModel):
         """Validate prompt size to prevent abuse"""
         if len(v) > MAX_INPUT_SIZE:
             raise ValueError(f'Prompt too large. Maximum size is {MAX_INPUT_SIZE} characters.')
+        return v
+    
+    @field_validator('jobDescription')
+    @classmethod
+    def validate_job_description_size(cls, v: Optional[str]) -> Optional[str]:
+        """Validate job description size if provided"""
+        if v and len(v) > 10000:
+            raise ValueError('Job description too large. Maximum size is 10,000 characters.')
         return v
 
 

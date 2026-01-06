@@ -412,5 +412,30 @@ main {
   font-size: 10px;
   font-weight: normal;
   margin-left: 4px;
+  color: #888;
+}
+
+.job-description-input {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background-color: white;
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+.job-description-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.job-description-input::placeholder {
+  color: #aaa;
 }
 

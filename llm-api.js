@@ -73,13 +73,18 @@ function formatFilesForPrompt(repoInfo, files) {
  * Create prompt for generating ATS-friendly resume points
  * @param {Object} repoInfo - Repository information
  * @param {string} formattedFiles - Formatted file contents
+ * @param {string|null} jobDescription - Optional job description for customization
  */
-function createResumePrompt(repoInfo, formattedFiles) {
+function createResumePrompt(repoInfo, formattedFiles, jobDescription = null) {
+  let jobDescriptionSection = '';
+  if (jobDescription && jobDescription.trim()) {
+    jobDescriptionSection = `\n**JOB DESCRIPTION (CUSTOMIZE RESUME POINTS TO MATCH):**\n${jobDescription}\n\n**IMPORTANT:** Analyze the job description above and identify key technologies, skills, requirements, and keywords. Tailor the resume bullet points to emphasize aspects of the project that align with these job requirements. Highlight matching technologies, similar problem-solving approaches, and relevant experience that demonstrates fit for this role.\n`;
+  }
+  
   return `You are an expert resume writer and technical recruiter. Analyze the following GitHub repository code and generate ATS-friendly resume bullet points.
 
 Repository: ${repoInfo.owner}/${repoInfo.repo}
-
-Instructions:
+${jobDescriptionSection}Instructions:
 1. Analyze the codebase to understand:
    - Technologies and frameworks used
    - Key features and functionality
@@ -133,28 +138,34 @@ Generate the resume bullet points now. Remember: EVERY bullet point MUST include
  * Call backend proxy to generate resume points
  * @param {string} apiKey - No longer used, kept for compatibility
  * @param {string} prompt - The prompt to send
- * @param {Object} options - Additional options (repoInfo, etc.)
+ * @param {Object} options - Additional options (repoInfo, jobDescription, etc.)
  * @returns {Promise<Object>} Object with content and token usage { content: string, usage: { prompt_tokens, completion_tokens, total_tokens } }
  */
 async function callHuggingFace(apiKey, prompt, options = {}) {
-  // Backend URL - configure this to match your deployment
-  // For development: use http://localhost:8000
-  // For production: update this to your deployed backend URL
-  const BACKEND_URL = 'http://localhost:8000';
+  // Backend URL - production deployment
+  const BACKEND_URL = 'https://codebrief-backend.onrender.com';
   
-  // Extract repoInfo from options
+  // Extract repoInfo and jobDescription from options
   const repoInfo = options.repoInfo || { owner: '', repo: '', url: '' };
+  const jobDescription = options.jobDescription || null;
   
   try {
+    const requestBody = {
+      repoInfo: repoInfo,
+      formattedPrompt: prompt
+    };
+    
+    // Include job description if provided
+    if (jobDescription) {
+      requestBody.jobDescription = jobDescription;
+    }
+    
     const response = await fetch(`${BACKEND_URL}/generate-resume`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        repoInfo: repoInfo,
-        formattedPrompt: prompt
-      })
+      body: JSON.stringify(requestBody)
     });
     
     if (!response.ok) {
@@ -238,8 +249,11 @@ async function generateResumePoints(provider, apiKey, repoInfo, files, onProgres
       onProgress({ type: 'formatting', message: 'Formatting code for analysis...' });
     }
     
-    // Create prompt
-    const prompt = createResumePrompt(repoInfo, formattedFiles);
+    // Get job description from options
+    const jobDescription = options.jobDescription || null;
+    
+    // Create prompt (with job description if provided)
+    const prompt = createResumePrompt(repoInfo, formattedFiles, jobDescription);
     
     if (onProgress) {
       onProgress({ type: 'calling', message: 'Calling backend API...' });
