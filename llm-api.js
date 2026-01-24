@@ -75,64 +75,79 @@ function formatFilesForPrompt(repoInfo, files) {
  * @param {string} formattedFiles - Formatted file contents
  * @param {string|null} jobDescription - Optional job description for customization
  */
+
 function createResumePrompt(repoInfo, formattedFiles, jobDescription = null) {
   let jobDescriptionSection = '';
   if (jobDescription && jobDescription.trim()) {
-    jobDescriptionSection = `\n**JOB DESCRIPTION (CUSTOMIZE RESUME POINTS TO MATCH):**\n${jobDescription}\n\n**IMPORTANT:** Analyze the job description above and identify key technologies, skills, requirements, and keywords. Tailor the resume bullet points to emphasize aspects of the project that align with these job requirements. Highlight matching technologies, similar problem-solving approaches, and relevant experience that demonstrates fit for this role.\n`;
+    jobDescriptionSection = `
+**JOB DESCRIPTION (USE FOR EMPHASIS, NOT FABRICATION):**
+${jobDescription}
+
+IMPORTANT:
+- Use the job description ONLY to decide what to emphasize or reword.
+- Do NOT invent skills, metrics, performance claims, or experience not supported by the repository.
+- If the repo does not contain something mentioned in the job description, do not claim it.
+`;
   }
-  
-  return `You are an expert resume writer and technical recruiter. Analyze the following GitHub repository code and generate ATS-friendly resume bullet points.
+
+  return `You are an expert resume writer and technical recruiter. Generate ATS-friendly resume bullet points using ONLY evidence found in the repository code/content provided below.
 
 Repository: ${repoInfo.owner}/${repoInfo.repo}
-${jobDescriptionSection}Instructions:
-1. Analyze the codebase to understand:
-   - Technologies and frameworks used
-   - Key features and functionality
-   - Architecture and design patterns
-   - Complexity and scale of the project
-   - Impact and business value
-   - Count files, endpoints, features, test coverage, etc.
+${jobDescriptionSection}
+Goal:
+Create 3–6 ATS-friendly resume bullets that summarize what was built, how it was built, and concrete scope/complexity — without inventing performance or business impact.
 
-2. Generate 3-5 ATS-friendly resume bullet points that:
-   - Start with strong action verbs (Developed, Built, Implemented, Designed, etc.)
-   - **CRITICAL: EVERY bullet point MUST include at least one quantifiable number or metric**
-   - Highlight technical skills and technologies
-   - Show impact and results with specific numbers
-   - Are specific and concrete
-   - Follow STAR method (Situation, Task, Action, Result) when applicable
+Hard rules (must follow):
+1) Only claim facts that are directly supported by the provided repository code/text.
+2) You MAY include numbers ONLY if you can derive them from the repo content, such as:
+   - counts of files/modules/components
+   - number of API endpoints/routes/controllers/handlers
+   - number of classes/functions/services
+   - number of tests/test files/test cases
+   - number of database tables/models/migrations
+   - number of CLI commands/jobs/workers
+   - number of integrations found in code
+   - lines-of-code estimate ONLY if explicitly present (otherwise do not guess)
+3) Do NOT fabricate any of these unless explicitly stated in code/docs/readme:
+   - request/sec, latency, throughput, uptime, user counts, revenue, cost savings, % improvements
+4) If you cannot confidently extract a number for a bullet, rewrite that bullet to focus on architecture/technique and omit numeric claims (numbers are optional, accuracy is mandatory).
 
-3. **REQUIRED: Include numbers for:**
-   - Number of files, modules, or components created
-   - Number of API endpoints, routes, or features implemented
-   - Performance improvements (e.g., "reduced response time by 40%", "handles 1000+ requests/sec")
-   - Scale metrics (e.g., "supports 10,000+ concurrent users", "processes 1M+ records")
-   - Code metrics (e.g., "10,000+ lines of code", "50+ test cases", "95% test coverage")
-   - Database/architecture metrics (e.g., "5 database tables", "3 microservices", "10+ API endpoints")
-   - User impact (e.g., "serves 100+ users", "handles 50+ game sessions simultaneously")
-   - Time/effort savings (e.g., "reduced deployment time by 60%", "automated 20+ manual processes")
-   - If exact numbers aren't visible, estimate based on code structure (count files, classes, functions, endpoints)
+What to analyze from the repo:
+- Tech stack (languages, frameworks, libraries, infrastructure)
+- Core features and major workflows
+- Architecture patterns (MVC, Clean Architecture, layered services, CQRS, etc.)
+- Data layer (ORM/models/migrations/schemas)
+- APIs (routes/endpoints, auth, validation, error handling)
+- Background jobs/queues, integrations, CI/CD, containerization
+- Testing approach (unit/integration/e2e) and what exists in the repo
 
-4. Format each bullet point on a new line with a bullet (•)
+Output requirements:
+- Provide 3–6 bullet points.
+- Each bullet starts with a strong action verb.
+- Each bullet must mention relevant technologies from the repo.
+- Use concrete, repo-verifiable scope/complexity signals ONLY when extractable.
+- Keep each bullet 1–2 lines, ATS-friendly, no fluff.
 
-5. Focus on:
-   - Technical achievements with measurable impact
-   - Problem-solving with quantifiable results
-   - Code quality and architecture with specific metrics
-   - Performance optimizations with percentage or time improvements
-   - Integration and APIs with endpoint/feature counts
-   - Testing and quality assurance with coverage percentages or test counts
-   - Collaboration and teamwork with team size or project scope
+Verification step (internal, do NOT show):
+- Extract an “Evidence Summary” of:
+  - frameworks/languages used
+  - route/endpoint count (if identifiable)
+  - test count (if identifiable)
+  - modules/services/components count (if identifiable)
+Then write bullets strictly based on that evidence.
 
-**Example format with numbers:**
-• Developed a RESTful API with 8+ endpoints using FastAPI, handling 500+ requests/minute and reducing response time by 35%
-• Built a scalable backend system supporting 100+ concurrent game sessions with 99.9% uptime
-• Implemented 15+ game features including collision detection and dynamic speed adjustments, improving gameplay smoothness by 40%
+Final output format:
+• <bullet 1>
+• <bullet 2>
+• <bullet 3>
+(etc.)
 
-Repository Code:
+Repository Code (verbatim excerpts / file listings):
 ${formattedFiles}
 
-Generate the resume bullet points now. Remember: EVERY bullet point MUST include at least one number or metric to show quantifiable impact.`;
+Now generate the ATS-friendly resume bullet points based strictly on the repository evidence, while emphasizing alignment with the job description where applicable.`;
 }
+
 
 /**
  * Call backend proxy to generate resume points
